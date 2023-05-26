@@ -1,20 +1,16 @@
-from typing import Any, AsyncGenerator, Dict, List
+from typing import Any, Dict, Generator, List
 
 import pytest
-from sqlalchemy import String, exc
-from sqlalchemy.ext.asyncio import (
-    AsyncEngine,
-    async_sessionmaker,
-    create_async_engine,
-)
+from sqlalchemy import Engine, String, create_engine, exc
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
     mapped_column,
     relationship,
+    sessionmaker,
 )
 
-from fastapi_users_db_sqlalchemy import (
+from fastapi_users_db_sync_sqlalchemy import (
     UUID_ID,
     SQLAlchemyBaseOAuthAccountTableUUID,
     SQLAlchemyBaseUserTableUUID,
@@ -23,8 +19,8 @@ from fastapi_users_db_sqlalchemy import (
 from tests.conftest import DATABASE_URL
 
 
-def create_async_session_maker(engine: AsyncEngine):
-    return async_sessionmaker(engine, expire_on_commit=False)
+def create_session_maker(engine: Engine):
+    return sessionmaker(engine, expire_on_commit=False)
 
 
 class Base(DeclarativeBase):
@@ -51,33 +47,33 @@ class UserOAuth(SQLAlchemyBaseUserTableUUID, OAuthBase):
 
 
 @pytest.fixture
-async def sqlalchemy_user_db() -> AsyncGenerator[SQLAlchemyUserDatabase, None]:
-    engine = create_async_engine(DATABASE_URL)
-    sessionmaker = create_async_session_maker(engine)
+def sqlalchemy_user_db() -> Generator[SQLAlchemyUserDatabase, None, None]:
+    engine = create_engine(DATABASE_URL)
+    sessionmaker = create_session_maker(engine)
 
-    async with engine.begin() as connection:
-        await connection.run_sync(Base.metadata.create_all)
+    with engine.begin() as connection:
+        Base.metadata.create_all(connection)
 
-    async with sessionmaker() as session:
+    with sessionmaker() as session:
         yield SQLAlchemyUserDatabase(session, User)
 
-    async with engine.begin() as connection:
-        await connection.run_sync(Base.metadata.drop_all)
+    with engine.begin() as connection:
+        Base.metadata.drop_all(connection)
 
 
 @pytest.fixture
-async def sqlalchemy_user_db_oauth() -> AsyncGenerator[SQLAlchemyUserDatabase, None]:
-    engine = create_async_engine(DATABASE_URL)
-    sessionmaker = create_async_session_maker(engine)
+def sqlalchemy_user_db_oauth() -> Generator[SQLAlchemyUserDatabase, None, None]:
+    engine = create_engine(DATABASE_URL)
+    sessionmaker = create_session_maker(engine)
 
-    async with engine.begin() as connection:
-        await connection.run_sync(OAuthBase.metadata.create_all)
+    with engine.begin() as connection:
+        OAuthBase.metadata.create_all(connection)
 
-    async with sessionmaker() as session:
+    with sessionmaker() as session:
         yield SQLAlchemyUserDatabase(session, UserOAuth, OAuthAccount)
 
-    async with engine.begin() as connection:
-        await connection.run_sync(OAuthBase.metadata.drop_all)
+    with engine.begin() as connection:
+        OAuthBase.metadata.drop_all(connection)
 
 
 @pytest.mark.asyncio

@@ -4,17 +4,11 @@ from typing import AsyncGenerator
 
 import pytest
 from pydantic import UUID4
-from sqlalchemy import exc
-from sqlalchemy.ext.asyncio import (
-    AsyncEngine,
-    AsyncSession,
-    async_sessionmaker,
-    create_async_engine,
-)
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy import Engine, create_engine, exc
+from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
-from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTableUUID
-from fastapi_users_db_sqlalchemy.access_token import (
+from fastapi_users_db_sync_sqlalchemy import SQLAlchemyBaseUserTableUUID
+from fastapi_users_db_sync_sqlalchemy.access_token import (
     SQLAlchemyAccessTokenDatabase,
     SQLAlchemyBaseAccessTokenTableUUID,
 )
@@ -33,8 +27,8 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
     pass
 
 
-def create_async_session_maker(engine: AsyncEngine):
-    return async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+def create_session_maker(engine: Engine):
+    return sessionmaker(engine, class_=Session, expire_on_commit=False)
 
 
 @pytest.fixture
@@ -43,26 +37,26 @@ def user_id() -> UUID4:
 
 
 @pytest.fixture
-async def sqlalchemy_access_token_db(
+def sqlalchemy_access_token_db(
     user_id: UUID4,
 ) -> AsyncGenerator[SQLAlchemyAccessTokenDatabase[AccessToken], None]:
-    engine = create_async_engine(DATABASE_URL)
-    sessionmaker = create_async_session_maker(engine)
+    engine = create_engine(DATABASE_URL)
+    sessionmaker = create_session_maker(engine)
 
-    async with engine.begin() as connection:
-        await connection.run_sync(Base.metadata.create_all)
+    with engine.begin() as connection:
+        Base.metadata.create_all(connection)
 
-    async with sessionmaker() as session:
+    with sessionmaker() as session:
         user = User(
             id=user_id, email="lancelot@camelot.bt", hashed_password="guinevere"
         )
         session.add(user)
-        await session.commit()
+        session.commit()
 
         yield SQLAlchemyAccessTokenDatabase(session, AccessToken)
 
-    async with engine.begin() as connection:
-        await connection.run_sync(Base.metadata.drop_all)
+    with engine.begin() as connection:
+        Base.metadata.drop_all(connection)
 
 
 @pytest.mark.asyncio

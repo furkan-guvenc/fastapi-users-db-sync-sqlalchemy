@@ -16,13 +16,10 @@ allow-direct-references = true
 [tool.hatch.version]
 source = "regex_commit"
 commit_extra_args = ["-e"]
-path = "fastapi_users_db_sqlalchemy/__init__.py"
+path = "fastapi_users_db_sync_sqlalchemy/__init__.py"
 
 [tool.hatch.envs.default]
 dependencies = [
-    "aiosqlite",
-    "asyncpg",
-    "aiomysql",
     "pytest",
     "pytest-asyncio",
     "black",
@@ -33,21 +30,21 @@ dependencies = [
     "httpx",
     "asgi_lifespan",
     "ruff",
-    "sqlalchemy[asyncio,mypy]",
+    "sqlalchemy[mypy]",
 ]
 
 [tool.hatch.envs.default.scripts]
-test = "pytest --cov=fastapi_users_db_sqlalchemy/ --cov-report=term-missing --cov-fail-under=100"
-test-cov-xml = "pytest --cov=fastapi_users_db_sqlalchemy/ --cov-report=xml --cov-fail-under=100"
+test = "pytest --cov=fastapi_users_db_sync_sqlalchemy/ --cov-report=term-missing --cov-fail-under=100"
+test-cov-xml = "pytest --cov=fastapi_users_db_sync_sqlalchemy/ --cov-report=xml --cov-fail-under=100"
 lint = [
   "black . ",
   "ruff --fix .",
-  "mypy fastapi_users_db_sqlalchemy/",
+  "mypy fastapi_users_db_sync_sqlalchemy/",
 ]
 lint-check = [
   "black --check .",
   "ruff .",
-  "mypy fastapi_users_db_sqlalchemy/",
+  "mypy fastapi_users_db_sync_sqlalchemy/",
 ]
 
 [tool.hatch.build.targets.sdist]
@@ -58,18 +55,17 @@ requires = ["hatchling", "hatch-regex-commit"]
 build-backend = "hatchling.build"
 
 [project]
-name = "fastapi-users-db-sqlalchemy"
+name = "fastapi-users-db-sync-sqlalchemy"
 authors = [
-    { name = "François Voron", email = "fvoron@gmail.com" },
+    { name = "Furkan Guvenc", email = "furkan.gvenc@gmail.com" },
 ]
-description = "FastAPI Users database adapter for SQLAlchemy"
+description = "FastAPI Users database adapter for Sync SQLAlchemy"
 readme = "README.md"
 dynamic = ["version"]
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Development Status :: 5 - Production/Stable",
     "Framework :: FastAPI",
-    "Framework :: AsyncIO",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
@@ -82,9 +78,9 @@ classifiers = [
 requires-python = ">=3.7"
 dependencies = [
     "fastapi-users >= 10.0.0",
-    "sqlalchemy[asyncio] >=2.0.0,<2.1.0",
+    "sqlalchemy >=2.0.0,<2.1.0",
 ]
 
 [project.urls]
 Documentation = "https://fastapi-users.github.io/fastapi-users"
-Source = "https://github.com/fastapi-users/fastapi-users-db-sqlalchemy"
+Source = "https://github.com/furkan-guvenc/fastapi-users-db-sync-sqlalchemy"

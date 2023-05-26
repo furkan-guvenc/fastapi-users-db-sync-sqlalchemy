@@ -5,10 +5,9 @@ from typing import TYPE_CHECKING, Any, Dict, Generic, Optional, Type
 from fastapi_users.authentication.strategy.db import AP, AccessTokenDatabase
 from fastapi_users.models import ID
 from sqlalchemy import ForeignKey, String, select
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Mapped, declared_attr, mapped_column
+from sqlalchemy.orm import Mapped, Session, declared_attr, mapped_column
 
-from fastapi_users_db_sqlalchemy.generics import GUID, TIMESTAMPAware, now_utc
+from fastapi_users_db_sync_sqlalchemy.generics import GUID, TIMESTAMPAware, now_utc
 
 
 class SQLAlchemyBaseAccessTokenTable(Generic[ID]):
@@ -49,7 +48,7 @@ class SQLAlchemyAccessTokenDatabase(Generic[AP], AccessTokenDatabase[AP]):
 
     def __init__(
         self,
-        session: AsyncSession,
+        session: Session,
         access_token_table: Type[AP],
     ):
         self.session = session
@@ -66,22 +65,22 @@ class SQLAlchemyAccessTokenDatabase(Generic[AP], AccessTokenDatabase[AP]):
                 self.access_token_table.created_at >= max_age  # type: ignore
             )
 
-        results = await self.session.execute(statement)
+        results = self.session.execute(statement)
         return results.scalar_one_or_none()
 
     async def create(self, create_dict: Dict[str, Any]) -> AP:
         access_token = self.access_token_table(**create_dict)
         self.session.add(access_token)
-        await self.session.commit()
+        self.session.commit()
         return access_token
 
     async def update(self, access_token: AP, update_dict: Dict[str, Any]) -> AP:
         for key, value in update_dict.items():
             setattr(access_token, key, value)
         self.session.add(access_token)
-        await self.session.commit()
+        self.session.commit()
         return access_token
 
     async def delete(self, access_token: AP) -> None:
-        await self.session.delete(access_token)
-        await self.session.commit()
+        self.session.delete(access_token)
+        self.session.commit()
